@@ -38,6 +38,7 @@ def run():
 
     # Get and plot GTFS layer
     print('Do you also want to get public transport layer? (y/n)')
+    pt = input()
     while not utils.valid_yn_input(pt):
         print('Wrong input, try again:')
         pt = input()
