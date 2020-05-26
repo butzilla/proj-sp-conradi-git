@@ -34,7 +34,9 @@ def simplify_graph(G, simplify, tol, plot):
         if plot:
             print('Showing not simplifyied OSM layer, close plot for programm to continue...')
             ox.plot_graph(G)
-        return ox.graph_to_gdfs(G, nodes=True, edges=False), ox.graph_to_gdfs(G, nodes=False, edges=True)
+        points = ox.graph_to_gdfs(G, nodes=True, edges=False)
+        edges = ox.graph_to_gdfs(G, nodes=False, edges=True)
+        return points['geometry'], edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length',  'name', 'oneway', 'maxspeed']]
 
     # If supposed to simplify use both osmnx function to simplify as well as clean_intersections to merge multiple
     # nodes on intersections.
@@ -64,7 +66,7 @@ def simplify_graph(G, simplify, tol, plot):
             ax.scatter(x=points[:, 0], y=points[:, 1], zorder=2, color='#66ccff', edgecolors='k')
             plt.show()
 
-        return intersections, edges
+        return intersections, edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length',  'name', 'oneway', 'maxspeed']]
 
 
 def get_osm(dirname, city, simplify, tolerance, plot):

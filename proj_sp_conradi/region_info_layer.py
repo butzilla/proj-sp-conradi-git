@@ -11,7 +11,7 @@ def velocity_from_type(velocities_list, key, maxspeed):
     This function looks matches roadsegment type with a speed limit.
     """
     if math.isnan(maxspeed):
-        print('Maxspeed not given')
+        # print('Maxspeed not given')
         if key in velocities_list:
             return kph2ms(velocities_list[key])
         else:

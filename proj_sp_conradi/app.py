@@ -26,6 +26,8 @@ def run():
     # List of possible cities
     cities = ['Zurich', 'Chicago']
 
+    ### Start of user interaction ###
+
     # Introduction in app and city selection
     print('Dear user, thanks for using this app! You can generate standardized mobility data sets of a specific city'
           'In the following you can choose whether to add different layers to the data sets. Please start with '
@@ -88,6 +90,8 @@ def run():
     while not utils.valid_yn_input(pt):
         print('Wrong input, try again:')
         parking = input()
+
+    ### End of user interaction ###
 
     # Get and plot osm layer
     osm_nodes, osm_edges = osm_layer.get_osm(dirname, city, simplify, tolerance, plot_osm)
