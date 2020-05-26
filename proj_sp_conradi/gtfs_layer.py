@@ -34,7 +34,32 @@ def nominatim_query(query):
     return shape(response_json[0]['geojson'])
 
 
-def get_gtfs(city):
+def get_gtfs(city, zip_url, plot):
+    td = tempfile.mkdtemp()
+    path = os.path.join(td, 'mta_bk.zip')
+
+    resp = requests.get(zip_url)
+    open(path, 'wb').write(resp.content)
+
+    print('Downloading GTFS feed..')
+    # Automatically identify the busiest day and
+    # read that in as a Partidge feed
+    feed = pt.get_representative_feed(path)
+
+    # Set a target time period to
+    # use to summarize impedance
+    start = 7 * 60 * 60  # 7:00 AM
+    end = 10 * 60 * 60  # 10:00 AM
+
+    # Converts feed subset into a directed
+    # network multigraph
+    G = pt.load_feed_as_graph(feed, start, end)
+
+    if plot:
+        pt.generate_plot(G)
+    return G
+
+def get_gtfs_url(city):
     print('Looking on https://transit.land/api for possible GTFS feeds for ' + city)
     base_link = 'https://transit.land/api/v1/feeds?bbox='
     city_bbox = nominatim_query(city).bounds
@@ -55,33 +80,4 @@ def get_gtfs(city):
     while not utils.valid_url_input(zip_url, urls):
         print('Invalid URL, please try again:')
         zip_url = input()
-    td = tempfile.mkdtemp()
-    path = os.path.join(td, 'mta_bk.zip')
-
-    resp = requests.get(zip_url)
-    open(path, 'wb').write(resp.content)
-
-    print('Downloading GTFS feed..')
-    # Automatically identify the busiest day and
-    # read that in as a Partidge feed
-    feed = pt.get_representative_feed(path)
-
-    # Set a target time period to
-    # use to summarize impedance
-    start = 7 * 60 * 60  # 7:00 AM
-    end = 10 * 60 * 60  # 10:00 AM
-
-    # Converts feed subset into a directed
-    # network multigraph
-    return pt.load_feed_as_graph(feed, start, end)
-
-def plot(G):
-    print('Do you want to plot public transport layer? (y/n)')
-    plot = input()
-    while not utils.valid_yn_input(plot):
-        print('Wrong input, try again:')
-        plot = input()
-    if pt == 'y':
-        pt.generate_plot(G)
-    elif pt == 'n':
-        print('Will not plot public transport layer')
+    return zip_url

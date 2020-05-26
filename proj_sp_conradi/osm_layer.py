@@ -13,6 +13,7 @@ import utm
 from shapely.geometry import Point
 from proj_sp_conradi import utils
 import os
+import matplotlib.pyplot as plt
 
 
 def get_store_osm(folder_path, filename, city, n_type):
@@ -22,16 +23,23 @@ def get_store_osm(folder_path, filename, city, n_type):
     # Save as graph ml
     ox.save_graphml(G, filename=filename, folder=folder_path, gephi=False)
 
-def simplify_graph(G, simplify, tol):
+def simplify_graph(G, simplify, tol, plot):
     """
     This function gets OSM graph of given type and city.
-    It returns the intersections and roadsecmemts of OSM graph in rad.
+    It returns the intersections and road segmemts of OSM graph in rad.
     """
+    # If not supposed to simplify, still use osmnx function to simplify.
     if not simplify:
         G = ox.simplify_graph(G)
+        if plot:
+            print('Showing not simplifyied OSM layer, close plot for programm to continue...')
+            ox.plot_graph(G)
         return ox.graph_to_gdfs(G, nodes=True, edges=False), ox.graph_to_gdfs(G, nodes=False, edges=True)
 
+    # If supposed to simplify use both osmnx function to simplify as well as clean_intersections to merge multiple
+    # nodes on intersections.
     else:
+        print("Simplifying graph...")
         # Project graph to get nodes in meter
         G_proj = ox.project_graph(G)
 
@@ -50,11 +58,16 @@ def simplify_graph(G, simplify, tol):
 
         # Get edges Graph inn lang/long
         edges = ox.graph_to_gdfs(G3, nodes=False, edges=True)
+        if plot:
+            print('Showing simplifyied OSM, close plot for programm to continue...')
+            fig, ax = ox.plot_graph(G3, fig_height=10, show=False, close=False, node_alpha=0)
+            ax.scatter(x=points[:, 0], y=points[:, 1], zorder=2, color='#66ccff', edgecolors='k')
+            plt.show()
 
         return intersections, edges
 
 
-def get_osm(dirname, city):
+def get_osm(dirname, city, simplify, tolerance, plot):
     # Network type
     n_type = 'drive'
 
@@ -67,7 +80,7 @@ def get_osm(dirname, city):
     if os.path.isfile(file_path):
         print('OSM data has already been downloaded and stored in ' + file_path)
         # Gets OSM layer from file
-        print('Will load data in app..')
+        print('Will load data in app...')
         G = ox.load_graphml(filename=filename, folder=folder_path)
     else:
         print('OSM data has not been downloaded. It will be downloaded and stored in ' + file_path)
@@ -77,21 +90,9 @@ def get_osm(dirname, city):
             print('Successfully downloaded and stored')
         except:
             print('Error while downloading and storing')
+    return simplify_graph(G, simplify, tolerance, plot)
 
-    print('Do you want to simplify the graph? (y/n)')
-    simplify = input()
-    while not utils.valid_yn_input(simplify):
-        print('Wrong input, try again:')
-        simplify = input()
-    if simplify == 'y':
-        simplify = True
-        print('The graph will be simplified, please give a range in meters to merge nodes:')
-        tolerance = int(input())
-        print('simplifying..')
-    else:
-        simplify = False
-        print('The graph will not be simplified')
-        tolerance = 0
-    return simplify_graph(G, simplify, tolerance)
-
-# TODO plot
+def plot(osm_nodes, osm_edges):
+    fig, ax = ox.plot_graph(G_proj, fig_height=10, show=False, close=False, node_alpha=0)
+    ax.scatter(x=osm_nodes[:, 0], y=osm_nodes[:, 1], zorder=2, color='#66ccff', edgecolors='k')
+    plt.show()
