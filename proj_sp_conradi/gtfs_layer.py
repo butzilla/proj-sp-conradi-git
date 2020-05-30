@@ -14,6 +14,21 @@ import peartree as pt
 from shapely.geometry import Point, shape
 from collections import OrderedDict
 from proj_sp_conradi import utils
+import pandas as pd
+import pandana as pdna
+import time
+
+import urbanaccess as ua
+from urbanaccess.config import settings
+from urbanaccess.gtfsfeeds import feeds
+from urbanaccess import gtfsfeeds
+from urbanaccess.gtfs.gtfsfeeds_dataframe import gtfsfeeds_dfs
+from urbanaccess.network import ua_network, load_network
+
+# Pandana currently uses depreciated parameters in matplotlib, this hides the warning until its fixed
+import warnings
+import matplotlib.cbook
+warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
 def nominatim_query(query):
     """
@@ -59,6 +74,44 @@ def get_gtfs(city, zip_url, plot):
         pt.generate_plot(G)
     return G
 
+def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path):
+    folder_path = 'resources/gtfs_feed'
+    folder_path_text = 'resources/gtfs_feed/gtfsfeed_text'
+    download_path = os.path.join(dirname, folder_path)
+    text_path = os.path.join(dirname, folder_path_text)
+    feeds.add_feed(add_dict={city: url})
+    gtfsfeeds.download(data_folder=download_path)
+    validation = True
+    verbose = True
+    remove_stops_outsidebbox = False
+    append_definitions = True
+    loaded_feeds = ua.gtfs.load.gtfsfeed_to_df(gtfsfeed_path=text_path)
+    ua.gtfs.network.create_transit_net(gtfsfeeds_dfs=loaded_feeds,
+                                       day='monday',
+                                       timerange=['07:00:00', '10:00:00'],
+                                       calendar_dates_lookup=None)
+    urbanaccess_net = ua.network.ua_network
+    edges = urbanaccess_net.transit_edges
+    edges['geometry'] = 'NA'
+    edges['lanes'] = 'NA'
+    edges = edges[
+        ['node_id_from', 'node_id_to', 'geometry', 'route_type', 'lanes', 'weight', 'unique_trip_id', 'unique_route_id',
+         'net_type']]
+    headways = ua.gtfs.headways.headways(loaded_feeds, ['07:00:00', '10:00:00'])
+    nodes = urbanaccess_net.transit_nodes
+    nodes = nodes[['x', 'y']]
+    nodes['headways_mean'] = headways.headways['mean']
+    headways = headways.headways[['mean', 'unique_stop_id']]
+    headways = headways.set_index('unique_stop_id')
+    nodes = nodes.join(headways)
+    nodes = nodes.rename(columns={"mean": "headways_mean"})
+    #stop_times = loaded_feeds.stop_times
+
+    edges.to_csv(gtfs_edges_path)
+    nodes.to_csv(gtfs_nodes_path)
+    #stop_times.to_csv(stop_times_path)
+
+
 def get_gtfs_url(city):
     print('Looking on https://transit.land/api for possible GTFS feeds for ' + city)
     base_link = 'https://transit.land/api/v1/feeds?bbox='
@@ -75,9 +128,22 @@ def get_gtfs_url(city):
     for f in resp_json['feeds']:
         urls.append(f['url'])
         print(f['url'])
-    print('Copy and past feed URL you want to get:')
-    zip_url = input()
-    while not utils.valid_url_input(zip_url, urls):
-        print('Invalid URL, please try again:')
+    print('Do you want to get one of those feeds? (y/n)')
+    get = input()
+    while not utils.valid_yn_input(get):
+        print('Wrong input, try again:')
+        get = input()
+    if get == 'y':
+        print('Copy and past feed URL you want to get:')
         zip_url = input()
-    return zip_url
+        while not utils.valid_url_input(zip_url, urls):
+            print('Invalid URL, please try again:')
+            zip_url = input()
+        return zip_url
+    else:
+        print('Then please enter your own zip url:')
+        return input()
+
+
+
+

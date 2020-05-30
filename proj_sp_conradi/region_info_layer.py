@@ -3,6 +3,7 @@ import numpy as np
 import math
 import pandas as pd
 import geopandas as gpd
+import os
 
 
 
@@ -83,72 +84,131 @@ def get_speed_time(edges):
 
     return edges
 
+def build_parking(edges, city, dirname):
+    """
+    This function adds the number of parking spots available at each road segment to egdes.
+    TODO add parking costs
+    """
+    addtional_info_path = 'resources/additional_info'
+    open_parking_house_filename = 'oeffentliche_parkhaeser_' + city + '.json'
+    open_parking_filename = 'oeffentliche_parkplätze_' + city + '.json'
+    output_filename = 'parking_' + city + '.csv'
+    folder_path = os.path.join(dirname, addtional_info_path)
+    open_parking_house_file_path = os.path.join(folder_path, open_parking_house_filename)
+    open_parking_file_path = os.path.join(folder_path, open_parking_filename)
+    output_path = os.path.join(folder_path, output_filename)
 
-def get_parking(edges):
+    open_parking_df = gpd.read_file(open_parking_file_path)
+    open_parking_house = gpd.read_file(open_parking_house_file_path)
+
+    edges['parking'] = np.zeros((len(edges['geometry'])))
+
+    print('adding parking spots to edges, this may take a while...')
+    for i in range(len(open_parking_df['geometry'])):
+        dist = (edges['geometry']).distance(open_parking_df['geometry'][i])
+        edges.loc[dist.idxmin(), 'parking'] += 1
+
+    for i in range(len(open_parking_house['geometry'])):
+        dist = (edges['geometry']).distance(open_parking_house['geometry'][i])
+        edges.loc[dist.idxmin(), 'parking'] += open_parking_house['anzahl_oeffentliche_pp'][i]
+
+    parking = edges['parking']
+    parking.to_csv(output_path)
+    return edges
+
+
+def get_parking(edges, dirname, city):
     """
     This function adds the number of parking spots available at each road segment to egdes. It reads in from a
     pre-computed csv. See get_parking.py for creation of csv.
     """
-    dir_open_parking = '/Users/johannesconradi/proj-sp-conradi/Zurich/Output/parking.csv'
-    parking = pd.read_csv(dir_open_parking)
-    edges['parking'] = parking['0.0']
 
-    return edges
+    addtional_info_path = 'resources/additional_info'
+    output_filename = 'parking_' + city + '.csv'
+    folder_path = os.path.join(dirname, addtional_info_path)
+    output_path = os.path.join(folder_path, output_filename)
+
+    filename = 'oeffentliche_parkhaeser_' + city + '.csv'
+    folder_path = os.path.join(dirname, addtional_info_path)
+    file_path = os.path.join(folder_path, filename)
+
+    if os.path.isfile(output_path):
+        parking = pd.read_csv(output_path)
+        edges['parking'] = parking['0.0']
+        return edges
+    else:
+        return build_parking(edges, city, dirname)
 
 
-def get_geom():
+def get_geom(dirname, city):
     """
     This function reads geografic regions and additional information for Zurich city and returns merged DataFrame
     """
     # Directories
-    dir_pop = '/Users/johannesconradi/proj-sp-conradi/Zurich/censusdata/City/bev390od3903.csv'
-    dir_geom = '/Users/johannesconradi/proj-sp-conradi/Zurich/Geo/stzh.adm_statistische_quartiere_v.json'
-    dir_income = '/Users/johannesconradi/proj-sp-conradi/Zurich/censusdata/City/wir100od1003.csv'
-    dir_housing = '/Users/johannesconradi/proj-sp-conradi/Zurich/censusdata/City/bau515od5151.csv'
+    addtional_info_path = 'resources/additional_info'
+    folder_path = os.path.join(dirname, addtional_info_path)
+    dir_pop = 'population_' + city + '.csv'
+    dir_geom = 'geo_' + city + '.json'
+    dir_income = 'income_' + city + '.csv'
+    dir_housing = 'housing_' + city + '.csv'
+    dir_pop =  os.path.join(folder_path, dir_pop)
+    print(dir_pop)
+    dir_geom = os.path.join(folder_path, dir_geom)
+    dir_income = os.path.join(folder_path, dir_income)
+    dir_housing = os.path.join(folder_path, dir_housing)
+
+    merges = 0
 
     # Get geographic regions
-    geomdf = gpd.read_file(dir_geom)
+    if os.path.isfile(dir_geom):
+        geomdf = gpd.read_file(dir_geom)
 
-    # Get income data for most recent year
-    incomedf = pd.read_csv(dir_income)
-    incomedf2017 = incomedf[incomedf['SteuerJahr'] == 2017]
-    SteuerEInkommen_p50_G = incomedf2017[['SteuerEInkommen_p50', 'QuarSort']][incomedf2017['SteuerTarifSort'] == 0]
-    SteuerEInkommen_p50_G = SteuerEInkommen_p50_G.rename(
-        columns={"SteuerEInkommen_p50": "SteuerEInkommen_p50_Grundtarif"})
-    SteuerEInkommen_p50_V = incomedf2017[['SteuerEInkommen_p50', 'QuarSort']][incomedf2017['SteuerTarifSort'] == 1]
-    SteuerEInkommen_p50_V = SteuerEInkommen_p50_V.rename(
-        columns={"SteuerEInkommen_p50": "SteuerEInkommen_p50_Verheiratetentarif"})
-    SteuerEInkommen_p50_EF = incomedf2017[['SteuerEInkommen_p50', 'QuarSort']][incomedf2017['SteuerTarifSort'] == 2]
-    SteuerEInkommen_p50_EF = SteuerEInkommen_p50_EF.rename(
-        columns={"SteuerEInkommen_p50": "SteuerEInkommen_p50_Einelternfamilientarif"})
+        # Get income data for most recent year
+        if os.path.isfile(dir_income):
+            incomedf = pd.read_csv(dir_income)
+            incomedf2017 = incomedf[incomedf['SteuerJahr'] == 2017]
+            SteuerEInkommen_p50_G = incomedf2017[['SteuerEInkommen_p50', 'QuarSort']][incomedf2017['SteuerTarifSort'] == 0]
+            SteuerEInkommen_p50_G = SteuerEInkommen_p50_G.rename(
+                columns={"SteuerEInkommen_p50": "SteuerEInkommen_p50_Grundtarif"})
+            SteuerEInkommen_p50_V = incomedf2017[['SteuerEInkommen_p50', 'QuarSort']][incomedf2017['SteuerTarifSort'] == 1]
+            SteuerEInkommen_p50_V = SteuerEInkommen_p50_V.rename(
+                columns={"SteuerEInkommen_p50": "SteuerEInkommen_p50_Verheiratetentarif"})
+            SteuerEInkommen_p50_EF = incomedf2017[['SteuerEInkommen_p50', 'QuarSort']][incomedf2017['SteuerTarifSort'] == 2]
+            SteuerEInkommen_p50_EF = SteuerEInkommen_p50_EF.rename(
+                columns={"SteuerEInkommen_p50": "SteuerEInkommen_p50_Einelternfamilientarif"})
 
-    # Map income data to geographic regions
-    merges = geomdf.merge(SteuerEInkommen_p50_G, left_on='qnr', right_on='QuarSort')
-    merges = merges.drop('QuarSort', axis=1)
-    merges = merges.merge(SteuerEInkommen_p50_V, left_on='qnr', right_on='QuarSort')
-    merges = merges.drop('QuarSort', axis=1)
-    merges = merges.merge(SteuerEInkommen_p50_EF, left_on='qnr', right_on='QuarSort')
-    merges = merges.drop('QuarSort', axis=1)
-    merges = merges.set_index('qnr')
+            # Map income data to geographic regions
+            merges = geomdf.merge(SteuerEInkommen_p50_G, left_on='qnr', right_on='QuarSort')
+            merges = merges.drop('QuarSort', axis=1)
+            merges = merges.merge(SteuerEInkommen_p50_V, left_on='qnr', right_on='QuarSort')
+            merges = merges.drop('QuarSort', axis=1)
+            merges = merges.merge(SteuerEInkommen_p50_EF, left_on='qnr', right_on='QuarSort')
+            merges = merges.drop('QuarSort', axis=1)
+            merges = merges.set_index('qnr')
 
-    # Get population data for most recent year
-    populationdf = pd.read_csv(dir_pop)
-    populationdf2019 = populationdf[populationdf['StichtagDatJahr'] == 2019]
-    pop_QuarSort = populationdf2019.groupby('QuarSort').sum()
-    pop_QuarSort = pop_QuarSort['AnzBestWir']
+        # Get population data for most recent year
+        if os.path.isfile(dir_pop):
+            populationdf = pd.read_csv(dir_pop)
+            populationdf2019 = populationdf[populationdf['StichtagDatJahr'] == 2019]
+            pop_QuarSort = populationdf2019.groupby('QuarSort').sum()
+            pop_QuarSort = pop_QuarSort['AnzBestWir']
 
-    # Map population data to geographic regions
-    merges = merges.join(pop_QuarSort)
-    merges = merges.rename(columns={"AnzBestWir": "AnzBev"})
+            # Map population data to geographic region
 
-    # Get housing data for most recent year
-    housingdf = pd.read_csv(dir_housing)
-    housingdf2019 = housingdf[housingdf['Jahr'] == 2019]
-    housingdf2019 = housingdf2019.set_index('Quartier_Nummer')
-    housingdf2019 = housingdf2019['Medianqmp']
+            merges = merges.join(pop_QuarSort)
+            merges = merges.rename(columns={"AnzBestWir": "AnzBev"})
 
-    # Map housing data to geographic regions
-    merges = merges.join(housingdf2019, rsuffix='Medianqmp')
+        # Get housing data for most recent year
+        if os.path.isfile(dir_housing):
+            housingdf = pd.read_csv(dir_housing)
+            housingdf2019 = housingdf[housingdf['Jahr'] == 2019]
+            housingdf2019 = housingdf2019.set_index('Quartier_Nummer')
+            housingdf2019 = housingdf2019['Medianqmp']
+
+            # Map housing data to geographic regions
+            merges = merges.join(housingdf2019, rsuffix='Medianqmp')
+    else:
+        print('No geographic information found')
 
     return merges
 
