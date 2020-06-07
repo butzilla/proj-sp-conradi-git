@@ -4,8 +4,12 @@ import math
 import pandas as pd
 import geopandas as gpd
 import os
-
-
+import shapefile
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
+import pandas as pd
+import censusdata
+from proj_sp_conradi import utils
 
 def velocity_from_type(velocities_list, key, maxspeed):
     """
@@ -212,6 +216,56 @@ def get_geom(dirname, city):
 
     return merges
 
+def get_geom_us(dirname, city, county, state):
+    """
+    This function reads geografic regions and gets additional information for US cities and returns merged DataFrame
+    """
+
+    geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])
+    var = ['B01001_001E', 'B19001_001E', 'B25075_001E']
+    add_info = censusdata.download('acs5', 2015, geo, var)
+    tractindex = []
+    for i in range(len(add_info)):
+        tract = str(add_info.index[i])
+        tractindex.append(tract.rsplit('tract:', 1)[1])
+    add_info['tractindex'] = tractindex
+    add_info = add_info.rename(columns={'B01001_001E': 'population'})
+    add_info = add_info.rename(columns={'B19001_001E': 'income $/year'})
+    add_info = add_info.rename(columns={'B25075_001E': 'housing value'})
+    return add_info
+
+def get_geo_node_us(dirname, points, state, county):
+    shapepath = dirname + '/resources/additional_info/state_'+ state
+    if not os.path.isdir(shapepath):
+        print('Please download the tract shapefile for the given state from here: '
+              'https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.2015.html and unzip '
+              'the folder. Move it to the directory: /resources/additional_info and rename to state_' + state)
+        print('Have you done that and want to continue? (y)?')
+        cont = input()
+        while not utils.valid_yn_input(cont):
+            print('Wrong input, try again:')
+            cont = input()
+    shapepath = dirname + '/resources/additional_info/state_'+ state + '/cb_2015_17_tract_500k'
+    sf = shapefile.Reader(shapepath)
+    Polygons = []
+    Tracts = []
+    shapes = sf.shapes()
+    records = sf.records()
+    tract = np.zeros(len(points))
+
+    for i in range(len(shapes)):
+        shape = shapes[i]
+        rec = records[i]
+        if rec[0] == state and rec[1] == county:
+            Polygons.append(Polygon(shape.points))
+            Tracts.append(rec[2])
+    for i, point in enumerate(points):
+        for j, poly in enumerate(Polygons):
+            if poly.contains(point):
+                tract[i] = Tracts[j]
+    merge = pd.DataFrame(tract, points)
+    return merge.rename(columns={0: "tract"})
+
 
 def get_geo_node(points, geomdf):
     """
@@ -225,3 +279,4 @@ def get_geo_node(points, geomdf):
         for j, poly in enumerate(polygons):
             if poly.contains(point):
                 tract[i] = qnr[j]
+    return pd.DataFrame(points, tract)

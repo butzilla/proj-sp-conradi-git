@@ -22,20 +22,21 @@ def run():
     """
     # Directory
     dirname = os.path.dirname(__file__)
-
     # List of possible cities
-    cities = ['Zurich', 'Chicago']
+    countries = ['Switzerland', 'US']
 
     ### Start of user interaction ###
 
     # Introduction in app and city selection
     print('Dear user, thanks for using this app! You can generate standardized mobility data sets of a specific city'
           'In the following you can choose whether to add different layers to the data sets. Please start with '
-          'choosing a city: (Zurich)')
+          'choosing a country: (US)')
+    country = input()
+    while not utils.valid_city_input(country, countries):
+        print('Country not list, please choose a different city:')
+        country = input()
+    print('Please choose a city in ' + country)
     city = input()
-    while not utils.valid_city_input(city, cities):
-        print('City not list, please choose a different city:')
-        city = input()
 
     # OSM layer user interaction
     print('Do you want to simplify the OSM graph? (y/n)')
@@ -83,18 +84,23 @@ def run():
     while not utils.valid_yn_input(pt):
         print('Wrong input, try again:')
         ad = input()
-    if ad and not city == 'Zurich':
+    if ad == 'y' and not city == 'Zurich' and not country == 'US':
         print("If you want to get additional informations for "+city+" please add the information to the folder "
                                                      "/resources/additional_info in the same format as shown on the "
                                                      "example of Zurich")
+    if ad == 'y' and country == 'US':
+        print('Please provide the state nr. of ' + city + ' (17)')
+        state = input()
+        print('Please also provide the county nr. of ' + city + ' (031)')
+        county = input()
 
-    # Additional information user interaction
+    # Parking user interaction
     print('Do you want to add parking spots to road segments (y/n)')
     parking = input()
     while not utils.valid_yn_input(pt):
         print('Wrong input, try again:')
         parking = input()
-    if parking and not city == 'Zurich':
+    if parking == 'y' and not city == 'Zurich':
         print("If you want to get parking for "+city+" please add the information to the folder "
                                                      "/resources/additional_info in the same format as shown on the "
                                                      "example of Zurich")
@@ -120,7 +126,7 @@ def run():
         gtfs_layer.download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path)
 
     # Get additional information on region layer
-    if ad == 'y':
+    if ad == 'y' and not country == 'US':
         # Gets "Statistische Quartiere" for Zurich and adds further info to each region
         geomdf = region_info_layer.get_geom(dirname, city)
 
@@ -129,11 +135,18 @@ def run():
         if osm_nodes == 0:
             print('Please add additional informations to folder and run app again')
             return
+    if ad == 'y' and country == 'US':
+        # Gets "census tracts" for city object in US and adds further info to each region
+        geomdf = region_info_layer.get_geom_us(dirname, city, county, state)
+        print(geomdf)
+        # Map each node to a geograpic region
+        osm_nodes = region_info_layer.get_geo_node_us(dirname, osm_nodes, state, county)
+        print(osm_nodes)
         # Add speed-limit to each edge and
         # calculate time it takes to travel on road-segment.
         #osm_edges = region_info_layer.get_speed_time(osm_edges)
 
-    if parking:
+    if parking == 'y':
         # Add number of parking spots available at each edge
         osm_edges = region_info_layer.get_parking(osm_edges, dirname, city)
 

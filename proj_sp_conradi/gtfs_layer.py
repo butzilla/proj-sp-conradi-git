@@ -10,7 +10,6 @@
 import os
 import requests
 import tempfile
-import peartree as pt
 from shapely.geometry import Point, shape
 from collections import OrderedDict
 from proj_sp_conradi import utils
@@ -48,7 +47,7 @@ def nominatim_query(query):
     response_json = response.json()
     return shape(response_json[0]['geojson'])
 
-
+"""
 def get_gtfs(city, zip_url, plot):
     td = tempfile.mkdtemp()
     path = os.path.join(td, 'mta_bk.zip')
@@ -73,7 +72,7 @@ def get_gtfs(city, zip_url, plot):
     if plot:
         pt.generate_plot(G)
     return G
-
+"""
 def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path):
     folder_path = 'resources/gtfs_feed'
     folder_path_text = 'resources/gtfs_feed/gtfsfeed_text'
@@ -109,7 +108,7 @@ def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, st
 
     edges.to_csv(gtfs_edges_path)
     nodes.to_csv(gtfs_nodes_path)
-    #stop_times.to_csv(stop_times_path)
+    stop_times.to_csv(stop_times_path)
 
 
 def get_gtfs_url(city):
