@@ -12,6 +12,8 @@ from proj_sp_conradi import osm_layer
 from proj_sp_conradi import gtfs_layer
 from proj_sp_conradi import region_info_layer
 from proj_sp_conradi import utils
+import censusdata
+import pprint
 
 
 def run():
@@ -91,23 +93,71 @@ def run():
         print('Will not get GTFS layer.')
 
     # Additional information user interaction
-    print('-------------------------------- \nDo you want to get additional information on region layer? (y/n)')
+    if country == 'US':
+        print('-------------------------------- \nDo you want to get additional information on region layer? The default '
+          'informations for the US are population, income $/year and housing value. (y/n)')
+    if country == 'Switzerland':
+        print('-------------------------------- \nDo you want to get additional information on region layer? The default '
+          'informations for Switzerland are income, population and housing prices (y/n)')
     ad = input()
     while not utils.valid_yn_input(pt):
         print('Wrong input, try again:')
         ad = input()
-    if ad == 'y' and not city == 'Zurich' and not country == 'US':
-        print("If you want to get additional informations for "+city+" please add the information to the folder "
+    if ad == 'y':
+        if not city == 'Zurich' and not country == 'US':
+            print("If you want to get additional informations for "+city+" please add the information to the folder "
                                                      "/resources/additional_info in the same format as shown on the "
                                                      "example of Zurich")
-    if ad == 'y' and country == 'US':
-        print('Please provide the state nr. of ' + city + ' (17)')
-        state = input()
-        print('Please also provide the county nr. of ' + city + ' (031)')
-        county = input()
-
+        if country == 'US':
+            print('Do you know state and county nr. of your city for asc5 2015? (Example Chicago: State=17 and County='
+                  '031)? (y/n)')
+            state_county = input()
+            if state_county == 'n':
+                print('List of states:')
+                pprint.pprint(censusdata.geographies(censusdata.censusgeo([('state', '*')]), 'acs5', 2015))
+                print('Please provide the state nr. of ' + city + ' (Example Chicago, Illinois: 17)')
+                state = input()
+                print('List of counties for state ' + state)
+                pprint.pprint(censusdata.geographies(censusdata.censusgeo([('state', state), ('county', '*')]), 'acs5', 2015))
+                print('Please also provide the county nr. of ' + city + ' (Example Chicago, Cook County, Illinois: 031)')
+                county = input()
+            else:
+                print('Please provide the state nr. of ' + city + ' (Example Chicago: 17)')
+                state = input()
+                print('Please also provide the county nr. of ' + city + ' (Example Chicago: 031)')
+                county = input()
+            shapepath = dirname + '/resources/additional_info/state_' + state
+            while not os.path.isdir(shapepath):
+                print('Please download the tract shapefile for the given state from here: '
+                      'https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.2015.html and unzip '
+                      'the folder. Move it to the directory: /resources/additional_info and rename to state_' + state)
+                print('Have you done that and want to continue? (y)?')
+                cont1 = input()
+                while not utils.valid_yn_input(cont1):
+                    print('Wrong input, try again:')
+                    cont1 = input()
+            print('Do you want to add further information other then the default ones? (y/n)')
+            fad = input()
+            while not utils.valid_yn_input(fad):
+                print('Wrong input, try again:')
+                fad = input()
+            if fad == 'y':
+                print('Please visit https://api.census.gov/data/2015/acs/acs5/variables.html and search for your '
+                      'desired variables. You can input the variables here comma-separated: (example B03002_017E,'
+                      'B03002_018E,B03002_016E...)')
+                var = input()
+                print('Do you want to continue with: '+ var +'? (y/n)')
+                cont2 = input()
+                while not cont2 == 'y':
+                    print('Please type variables again:')
+                    var = input()
+                    print('Do you want to continue with: '+ var +'? (y/n)')
+                    cont2 = input()
+            else:
+                var = []
+    # Parking user interaction
     if country == 'Switzerland':
-        # Parking user interaction
+
         print('-------------------------------- \nDo you want to add parking spots to road segments (y/n)')
         parking = input()
         while not utils.valid_yn_input(pt):
@@ -117,6 +167,11 @@ def run():
             print("If you want to get parking for "+city+" please add the information to the folder "
                                                          "/resources/additional_info in the same format as shown on the "
                                                          "example of Zurich")
+    else:
+        parking = 'n'
+
+    print('-------------------------------- \nEnd of user interaction. Will start processing data now. Sit back and '
+          'relax ;)')
 
     ### End of user interaction ###
 
@@ -158,7 +213,7 @@ def run():
             return
     if ad == 'y' and country == 'US':
         # Gets "census tracts" for city object in US and adds further info to each region
-        geomdf = region_info_layer.get_geom_us(dirname, city, county, state)
+        geomdf = region_info_layer.get_geom_us(dirname, city, county, state, var)
         geomdf.to_csv(geom_filename_path)
         # Map each node to a geograpic region
         osm_nodes = region_info_layer.get_geo_node_us(dirname, osm_nodes, state, county)
@@ -172,6 +227,7 @@ def run():
         osm_edges = region_info_layer.get_parking(osm_edges, dirname, city)
         osm_edges.to_csv(osm_edges_path)
 
+    print('Done processing data.')
 
 
 

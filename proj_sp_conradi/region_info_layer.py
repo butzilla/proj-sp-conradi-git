@@ -223,14 +223,15 @@ def get_geom(dirname, city):
 
     return merges
 
-def get_geom_us(dirname, city, county, state):
+def get_geom_us(dirname, city, county, state, var):
     """
     This function reads geografic regions and gets additional information for US cities and returns merged DataFrame
     TODO make interactive. User can add variables.
     """
 
     geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])
-    var = ['B01001_001E', 'B19001_001E', 'B25075_001E']
+    var = var.split(",")
+    var = ['B01001_001E', 'B19001_001E', 'B25075_001E'] + var
     add_info = censusdata.download('acs5', 2015, geo, var)
     tractindex = []
     for i in range(len(add_info)):
@@ -238,22 +239,12 @@ def get_geom_us(dirname, city, county, state):
         tractindex.append(tract.rsplit('tract:', 1)[1])
     add_info['tractindex'] = tractindex
     add_info = add_info.rename(columns={'B01001_001E': 'population'})
-    add_info = add_info.rename(columns={'B19001_001E': 'income $/year'})
-    add_info = add_info.rename(columns={'B25075_001E': 'housing value'})
+    add_info = add_info.rename(columns={'B19001_001E': 'income $/year'}) #still wrong.. find other variable
+    add_info = add_info.rename(columns={'B25075_001E': 'housing value'}) #still wrong.. find other variable
     return add_info
 
 def get_geo_node_us(dirname, points, state, county):
-    shapepath = dirname + '/resources/additional_info/state_'+ state
-    if not os.path.isdir(shapepath):
-        print('Please download the tract shapefile for the given state from here: '
-              'https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.2015.html and unzip '
-              'the folder. Move it to the directory: /resources/additional_info and rename to state_' + state)
-        print('Have you done that and want to continue? (y)?')
-        cont = input()
-        while not utils.valid_yn_input(cont):
-            print('Wrong input, try again:')
-            cont = input()
-    shapepath = dirname + '/resources/additional_info/state_'+ state + '/cb_2015_17_tract_500k'
+    shapepath = dirname + '/resources/additional_info/state_'+ state + '/cb_2015_'+state+'_tract_500k'
     sf = shapefile.Reader(shapepath)
     Polygons = []
     Tracts = []
