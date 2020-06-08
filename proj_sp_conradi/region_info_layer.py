@@ -1,14 +1,21 @@
+# -----------------------------------------------------------
+# This script provides functions for adding additional
+# information to OSM street graph.
+#
+#
+# Johannes Conradi, 2020 ETH Zuerich
+# email: conradij@ethz.ch
+# -----------------------------------------------------------
 
 import numpy as np
 import math
-import pandas as pd
 import geopandas as gpd
 import os
 import shapefile
-from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import pandas as pd
 import censusdata
+
 from proj_sp_conradi import utils
 
 def velocity_from_type(velocities_list, key, maxspeed):
@@ -219,6 +226,7 @@ def get_geom(dirname, city):
 def get_geom_us(dirname, city, county, state):
     """
     This function reads geografic regions and gets additional information for US cities and returns merged DataFrame
+    TODO make interactive. User can add variables.
     """
 
     geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])

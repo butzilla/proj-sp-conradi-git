@@ -1,6 +1,5 @@
 # -----------------------------------------------------------
-# This script downloads GTFS data and stores it as an
-# adjacency matrix.
+# This script provides functions for the GTFS interactions.
 #
 #
 # Johannes Conradi, 2020 ETH Zuerich
@@ -9,25 +8,18 @@
 
 import os
 import requests
-import tempfile
 from shapely.geometry import Point, shape
 from collections import OrderedDict
 from proj_sp_conradi import utils
-import pandas as pd
-import pandana as pdna
-import time
 
 import urbanaccess as ua
-from urbanaccess.config import settings
 from urbanaccess.gtfsfeeds import feeds
 from urbanaccess import gtfsfeeds
-from urbanaccess.gtfs.gtfsfeeds_dataframe import gtfsfeeds_dfs
-from urbanaccess.network import ua_network, load_network
 
 # Pandana currently uses depreciated parameters in matplotlib, this hides the warning until its fixed
 import warnings
 import matplotlib.cbook
-warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
+warnings.filterwarnings("ignore", category=matplotlib.cbook.mplDeprecation)
 
 def nominatim_query(query):
     """
@@ -75,15 +67,13 @@ def get_gtfs(city, zip_url, plot):
 """
 def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path):
     folder_path = 'resources/gtfs_feed'
-    folder_path_text = 'resources/gtfs_feed/gtfsfeed_text'
+    folder_path_text = 'resources/gtfs_feed/gtfsfeed_text/' + city
     download_path = os.path.join(dirname, folder_path)
     text_path = os.path.join(dirname, folder_path_text)
     feeds.add_feed(add_dict={city: url})
     gtfsfeeds.download(data_folder=download_path)
-    validation = True
-    verbose = True
-    remove_stops_outsidebbox = False
-    append_definitions = True
+
+    stop_times = False
     loaded_feeds = ua.gtfs.load.gtfsfeed_to_df(gtfsfeed_path=text_path)
     ua.gtfs.network.create_transit_net(gtfsfeeds_dfs=loaded_feeds,
                                        day='monday',
@@ -99,16 +89,17 @@ def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, st
     headways = ua.gtfs.headways.headways(loaded_feeds, ['07:00:00', '10:00:00'])
     nodes = urbanaccess_net.transit_nodes
     nodes = nodes[['x', 'y']]
-    nodes['headways_mean'] = headways.headways['mean']
-    headways = headways.headways[['mean', 'unique_stop_id']]
+    headways = headways.headways[['mean', 'unique_stop_id', 'unique_route_id']]
     headways = headways.set_index('unique_stop_id')
     nodes = nodes.join(headways)
     nodes = nodes.rename(columns={"mean": "headways_mean"})
-    #stop_times = loaded_feeds.stop_times
-
+    nodes = nodes.drop_duplicates()
     edges.to_csv(gtfs_edges_path)
     nodes.to_csv(gtfs_nodes_path)
-    stop_times.to_csv(stop_times_path)
+
+    if stop_times:
+        stop_times = loaded_feeds.stop_times
+        stop_times.to_csv(stop_times_path)
 
 
 def get_gtfs_url(city):

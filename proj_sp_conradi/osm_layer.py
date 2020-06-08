@@ -1,6 +1,5 @@
 # -----------------------------------------------------------
-# This script downloads OSM data and stores the data in graphml
-# format
+# This script provides functions OSM data handling.
 #
 #
 # Johannes Conradi, 2020 ETH Zuerich
@@ -11,7 +10,6 @@ import osmnx as ox
 import numpy as np
 import utm
 from shapely.geometry import Point
-from proj_sp_conradi import utils
 import os
 import matplotlib.pyplot as plt
 
