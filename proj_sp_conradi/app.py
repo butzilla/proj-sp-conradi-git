@@ -14,6 +14,8 @@ from proj_sp_conradi import region_info_layer
 from proj_sp_conradi import utils
 import censusdata
 import pprint
+import pandas as pd
+import json
 
 
 def run():
@@ -25,18 +27,24 @@ def run():
     dirname = os.path.dirname(__file__)
     # List of possible cities
     countries = ['Switzerland', 'US']
+    demand_file = pd.read_csv(dirname+'/cities_with_demand.json')
+    with open('/Users/johannesconradi/proj-sp-conradi-git/proj_sp_conradi/cities_with_demand.json') as json_file:
+        demand_file = json.load(json_file)
+    cities_with_demand = demand_file['Cities']
+    #print(cities_with_demand)
 
     ### Start of user interaction ###
 
     # Introduction in app and city selection
     print('Dear user, thanks for using this app! You can generate standardized mobility data sets of a specific city'
-          'In the following you can choose whether to add different layers to the data sets. Please start with '
-          'choosing a country: (US/Switzerland)')
+          'In the following you can choose whether to add different layers to the data sets. There are 4 layers in total.'
+          'OSM street layer, GTFS public transport, addtional information for specific region and demand layer.'
+          'Please start with choosing a country: (US/Switzerland)')
     country = input()
     while not utils.valid_city_input(country, countries):
         print('Country not list, please choose a different city:')
         country = input()
-    print('-------------------------------- \nPlease choose a city in ' + country)
+    print('Please choose a city in ' + country)
     city = input()
     print('Do you want to continue with '+ city +'? (y/n)')
     cont = input()
@@ -47,7 +55,8 @@ def run():
         cont = input()
 
     # OSM layer user interaction
-    print('-------------------------------- \nDo you want to get OSM graph? (y/n)')
+    print('-------------------------------- \n'
+          '*****OSM Street Layer*****\nDo you want to get OSM graph? (y/n)')
     osm = input()
     while not utils.valid_yn_input(osm):
         print('Wrong input, try again:')
@@ -77,7 +86,8 @@ def run():
             plot_osm = False
 
     # GTFS layer user interaction
-    print('-------------------------------- \nDo you want to get public transport layer? (y/n)')
+    print('-------------------------------- \n'
+          '*****GTFS Public Transport Layer*****\nDo you want to get public transport layer? (y/n)')
     pt = input()
     while not utils.valid_yn_input(pt):
         print('Wrong input, try again:')
@@ -94,10 +104,12 @@ def run():
 
     # Additional information user interaction
     if country == 'US':
-        print('-------------------------------- \nDo you want to get additional information on region layer? The default '
+        print('-------------------------------- \n'
+              '*****Addtional Information Layer*****\nDo you want to get additional information on region layer? The default '
           'informations for the US are population, income $/year and housing value. (y/n)')
     if country == 'Switzerland':
-        print('-------------------------------- \nDo you want to get additional information on region layer? The default '
+        print('-------------------------------- \n'
+              '*****Addtional Information Layer*****\nDo you want to get additional information on region layer? The default '
           'informations for Switzerland are income, population and housing prices (y/n)')
     ad = input()
     while not utils.valid_yn_input(pt):
@@ -160,7 +172,7 @@ def run():
 
         print('-------------------------------- \nDo you want to add parking spots to road segments (y/n)')
         parking = input()
-        while not utils.valid_yn_input(pt):
+        while not utils.valid_yn_input(parking):
             print('Wrong input, try again:')
             parking = input()
         if parking == 'y' and not city == 'Zurich':
@@ -169,6 +181,31 @@ def run():
                                                          "example of Zurich")
     else:
         parking = 'n'
+
+    # Demand layer user interaction
+    print('-------------------------------- \n'
+          '*****Demand Layer*****\nDo you want to get information on where to get demand data for ' + city + '? (y/n)')
+    demand = input()
+    while not utils.valid_yn_input(demand):
+        print('Wrong input, try again:')
+        demand = input()
+    if demand == 'y':
+        if not utils.valid_city_input(city,cities_with_demand):
+            print('Unfortunately, we do not have any demand information on '+ city +'.Do you have demand informations and '
+                                                                                    'want to add it? (y/n)')
+            demand_add = input()
+            while not utils.valid_yn_input(demand_add):
+                print('Wrong input, try again:')
+                demand_add = input()
+            if demand_add == 'y':
+                print('If you have demand informations please copy and past link in the following:')
+                link = input()
+                demand_file['Cities'].append(city)
+                demand_file.append({city: link})
+        else:
+            print('We have found following links for the demand layer:')
+            print(demand_file[city])
+
 
     print('-------------------------------- \nEnd of user interaction. Will start processing data now. Sit back and '
           'relax ;)')

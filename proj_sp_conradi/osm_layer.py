@@ -34,8 +34,8 @@ def simplify_graph(G, simplify, tol, plot):
             ox.plot_graph(G)
         points = ox.graph_to_gdfs(G, nodes=True, edges=False)
         edges = ox.graph_to_gdfs(G, nodes=False, edges=True)
-        return points['geometry'], edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length',  'name', 'oneway', 'maxspeed']]
-
+        #return points[['osmid', 'geometry']], edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length',  'name', 'oneway', 'maxspeed']]
+        return points[['osmid', 'geometry']], edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length', 'name', 'oneway', 'maxspeed']]
     # If supposed to simplify use both osmnx function to simplify as well as clean_intersections to merge multiple
     # nodes on intersections.
     else:
