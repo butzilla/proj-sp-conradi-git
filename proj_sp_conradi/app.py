@@ -201,8 +201,11 @@ def run():
                 print('If you have demand informations please copy and past link in the following:')
                 link = input()
                 demand_file['Cities'].append(city)
-                demand_file.append({city: link})
-        else:
+                demand_file.update({city: link})
+                with open('/Users/johannesconradi/proj-sp-conradi-git/proj_sp_conradi/cities_with_demand.json',
+                          'w') as outfile:
+                    json.dump(demand_file, outfile)
+        if utils.valid_city_input(city, cities_with_demand):
             print('We have found following links for the demand layer:')
             print(demand_file[city])
 
