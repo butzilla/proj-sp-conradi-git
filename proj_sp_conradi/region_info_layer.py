@@ -98,7 +98,6 @@ def get_speed_time(edges):
 def build_parking(edges, city, dirname):
     """
     This function adds the number of parking spots available at each road segment to egdes.
-    TODO add parking costs
     """
     addtional_info_path = 'resources/additional_info'
     open_parking_house_filename = 'oeffentliche_parkhaeser_' + city + '.json'
@@ -226,12 +225,11 @@ def get_geom(dirname, city):
 def get_geom_us(dirname, city, county, state, var):
     """
     This function reads geografic regions and gets additional information for US cities and returns merged DataFrame
-    TODO make interactive. User can add variables.
     """
 
     geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])
     var = var.split(",")
-    var = ['B01001_001E', 'B19001_001E', 'B25075_001E'] + var
+    var = ['B01001_001E', 'B06011_001E', 'B25075_001E'] + var
     add_info = censusdata.download('acs5', 2015, geo, var)
     tractindex = []
     for i in range(len(add_info)):
@@ -239,7 +237,7 @@ def get_geom_us(dirname, city, county, state, var):
         tractindex.append(tract.rsplit('tract:', 1)[1])
     add_info['tractindex'] = tractindex
     add_info = add_info.rename(columns={'B01001_001E': 'population'})
-    add_info = add_info.rename(columns={'B19001_001E': 'income $/year'}) #still wrong.. find other variable
+    add_info = add_info.rename(columns={'B06011_001E': 'income $/year'}) #still wrong.. find other variable
     add_info = add_info.rename(columns={'B25075_001E': 'housing value'}) #still wrong.. find other variable
     return add_info
 

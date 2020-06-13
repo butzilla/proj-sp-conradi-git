@@ -12,6 +12,7 @@ from proj_sp_conradi import osm_layer
 from proj_sp_conradi import gtfs_layer
 from proj_sp_conradi import region_info_layer
 from proj_sp_conradi import utils
+from proj_sp_conradi import demand_layer
 import censusdata
 import pprint
 import pandas as pd
@@ -208,6 +209,16 @@ def run():
         if utils.valid_city_input(city, cities_with_demand):
             print('We have found following links for the demand layer:')
             print(demand_file[city])
+            if country == 'US':
+                print('Please download demand data in csv format, name the file demand_' +city+ '.csv and move it to '
+                        '/resources/demand_layer. You should also make sure that there are the following four columns '
+                        'with exact naming: 1)Pickup Centroid Latitude 2)Pickup Centroid Longitude 3)Dropoff Centroid '
+                        'Latitude 4)Dropoff Centroid Longitude. Have you done that?(y)')
+                cont3 = input()
+                while not utils.valid_yn_input(cont3):
+                    print('Will not continue until you confirm with y:')
+                    demand_add = input()
+
 
 
     print('-------------------------------- \nEnd of user interaction. Will start processing data now. Sit back and '
@@ -222,6 +233,7 @@ def run():
     gtfs_eges_filename = 'gtfs_edges_' + city + '.csv'
     gtfs_nodes_filename = 'gtfs_nodes_' + city + '.csv'
     gtfs_stop_times_filename = 'gtfs_stop_times_' + city + '.csv'
+    demand_filename = 'demand_w_osmid' + city + '.csv'
     output_path = os.path.join(dirname, 'output')
     osm_edges_path = os.path.join(output_path, osm_eges_filename)
     osm_nodes_path = os.path.join(output_path, osm_nodes_filename)
@@ -229,6 +241,7 @@ def run():
     gtfs_nodes_path = os.path.join(output_path, gtfs_nodes_filename)
     stop_times_path = os.path.join(output_path, gtfs_stop_times_filename)
     geom_filename_path = os.path.join(output_path, geom_filename)
+    demand_path = os.path.join(output_path, demand_filename)
 
     # Get and plot osm layer
     if osm == 'y':
@@ -266,6 +279,10 @@ def run():
         # Add number of parking spots available at each edge
         osm_edges = region_info_layer.get_parking(osm_edges, dirname, city)
         osm_edges.to_csv(osm_edges_path)
+
+    if demand == 'y':
+        demand_df = demand_layer.get_demand(dirname, city, osm_nodes)
+        demand_df.to_csv(demand_path)
 
     print('Done processing data.')
 

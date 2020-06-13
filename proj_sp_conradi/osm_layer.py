@@ -8,10 +8,11 @@
 
 import osmnx as ox
 import numpy as np
-import utm
 from shapely.geometry import Point
 import os
 import matplotlib.pyplot as plt
+import pyproj
+
 
 
 def get_store_osm(folder_path, filename, city, n_type):
@@ -40,8 +41,10 @@ def simplify_graph(G, simplify, tol, plot):
     # nodes on intersections.
     else:
         print("Simplifying graph...")
+        proj_wgs84 = pyproj.Proj(init="epsg:4326")
+        proj_gk4 = pyproj.Proj(init="epsg:31468")
         # Project graph to get nodes in meter
-        G_proj = ox.project_graph(G)
+        G_proj = ox.project_graph(G, to_crs="epsg:31468")
 
         # Simplify graph
         G2 = ox.simplify_graph(G_proj)
@@ -50,7 +53,7 @@ def simplify_graph(G, simplify, tol, plot):
         intersections = ox.clean_intersections(G2, tolerance=tol, dead_ends=False)
         points = np.array([point.xy for point in intersections])
         for i, point in enumerate(points):
-            points[i] = utm.to_latlon(point[0], point[1], 32, 'U')
+            points[i] = pyproj.transform(proj_gk4, proj_wgs84, point[0], point[1])
             intersections[i] = Point(points[i, 1, 0], points[i, 0, 0])
 
         # Project graph back to degrees
@@ -92,7 +95,9 @@ def get_osm(dirname, city, simplify, tolerance, plot):
             print('Error while downloading and storing')
     return simplify_graph(G, simplify, tolerance, plot)
 
+"""
 def plot(osm_nodes, osm_edges):
     fig, ax = ox.plot_graph(G_proj, fig_height=10, show=False, close=False, node_alpha=0)
     ax.scatter(x=osm_nodes[:, 0], y=osm_nodes[:, 1], zorder=2, color='#66ccff', edgecolors='k')
     plt.show()
+"""
