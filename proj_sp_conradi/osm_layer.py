@@ -50,7 +50,7 @@ def simplify_graph(G, simplify, tol, plot):
         G2 = ox.simplify_graph(G_proj)
 
         # Get merge nodes that are closer than tolerance and project back to lang/long
-        intersections = ox.clean_intersections(G2, tolerance=tol, dead_ends=False)
+        intersections = ox.clean_intersections(G2, tolerance=tol, dead_ends=False) #TODO find out if you can get OSM id
         points = np.array([point.xy for point in intersections])
         for i, point in enumerate(points):
             points[i] = pyproj.transform(proj_gk4, proj_wgs84, point[0], point[1])

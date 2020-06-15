@@ -228,7 +228,8 @@ def get_geom_us(dirname, city, county, state, var):
     """
 
     geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])
-    var = var.split(",")
+    if not var:
+        var = var.split(",")
     var = ['B01001_001E', 'B06011_001E', 'B25075_001E'] + var
     add_info = censusdata.download('acs5', 2015, geo, var)
     tractindex = []
