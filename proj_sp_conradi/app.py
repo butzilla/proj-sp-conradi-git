@@ -303,8 +303,7 @@ def run():
         demand_df = demand_layer.get_demand_trip(dirname, city, osm_nodes, osm_mapping)
         demand_df.to_csv(demand_path)
     if demand == 'y' and country == 'Switzerland':
-        # Only for Kanton ZH
-        osm_nodes = demand_layer.map_osm_demandgeo(dirname, osm_nodes)
+        osm_nodes = demand_layer.map_osm_demandgeo(dirname, osm_nodes) # Only for Kanton ZH
         osm_nodes.to_csv(osm_nodes_path)
     print('Done processing data.')
 
