@@ -242,7 +242,7 @@ def get_geom_us(dirname, city, county, state, var):
     add_info = add_info.rename(columns={'B25075_001E': 'housing value'}) #still wrong.. find other variable
     return add_info
 
-def get_geo_node_us(dirname, points, state, county):
+def get_geo_node_us(dirname, points, state, county, simplify):
     shapepath = dirname + '/resources/additional_info/state_'+ state + '/cb_2015_'+state+'_tract_500k'
     sf = shapefile.Reader(shapepath)
     Polygons = []
@@ -257,15 +257,22 @@ def get_geo_node_us(dirname, points, state, county):
         if rec[0] == state and rec[1] == county:
             Polygons.append(Polygon(shape.points))
             Tracts.append(rec[2])
-    for i, point in enumerate(points):
-        for j, poly in enumerate(Polygons):
-            if poly.contains(point):
-                tract[i] = Tracts[j]
+    if simplify:
+        for i, point in enumerate(points):
+            for j, poly in enumerate(Polygons):
+                if poly.contains(point):
+                    tract[i] = Tracts[j]
+    else:
+        for i, point in enumerate(points['geometry']):
+            for j, poly in enumerate(Polygons):
+                if poly.contains(point):
+                    tract[i] = Tracts[j]
+
     merge = pd.DataFrame(tract, points)
     return merge.rename(columns={0: "tract"})
 
 
-def get_geo_node(points, geomdf):
+def get_geo_node(points, geomdf, simplify):
     """
     This function maps a each node to a geographic region.
     """
@@ -273,8 +280,14 @@ def get_geo_node(points, geomdf):
     qnr = geomdf.index
     tract = np.zeros(len(points))
 
-    for i, point in enumerate(points):
-        for j, poly in enumerate(polygons):
-            if poly.contains(point):
-                tract[i] = qnr[j]
+    if simplify:
+        for i, point in enumerate(points):
+            for j, poly in enumerate(polygons):
+                if poly.contains(point):
+                    tract[i] = qnr[j]
+    else:
+        for i, point in enumerate(points['geometry']):
+            for j, poly in enumerate(polygons):
+                if poly.contains(point):
+                    tract[i] = qnr[j]
     return pd.DataFrame(points, tract)

@@ -55,7 +55,6 @@ def simplify_graph(G, simplify, tol, plot):
         for i, point in enumerate(points):
             points[i] = pyproj.transform(proj_gk4, proj_wgs84, point[0], point[1])
             intersections[i] = Point(points[i, 1, 0], points[i, 0, 0])
-
         # Project graph back to degrees
         G3 = ox.project_graph(G2, to_crs={'init': 'epsg:4326'})
 

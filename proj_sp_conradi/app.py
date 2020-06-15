@@ -17,6 +17,7 @@ import censusdata
 import pprint
 import pandas as pd
 import json
+import zipfile
 
 
 def run():
@@ -39,7 +40,7 @@ def run():
     # Introduction in app and city selection
     print('Dear user, thanks for using this app! You can generate standardized mobility data sets of a specific city'
           'In the following you can choose whether to add different layers to the data sets. There are 4 layers in total.'
-          'OSM street layer, GTFS public transport, addtional information for specific region and demand layer.'
+          'OSM street layer, GTFS public transport, additional information for specific region and demand layer.'
           'Please start with choosing a country: (US/Switzerland)')
     country = input()
     while not utils.valid_city_input(country, countries):
@@ -63,7 +64,8 @@ def run():
         print('Wrong input, try again:')
         osm = input()
     if osm == 'y':
-        print('Do you want to simplify the OSM graph? (y/n)')
+        print('Do you want to simplify the OSM graph? If the graph is simplified there will be no OSM IDs per node anymore'
+              '(y/n)')
         simplify = input()
         while not utils.valid_yn_input(simplify):
             print('Wrong input, try again:')
@@ -171,7 +173,7 @@ def run():
     # Parking user interaction
     if country == 'Switzerland':
 
-        print('-------------------------------- \nDo you want to add parking spots to road segments (y/n)')
+        print('Do you want to add parking spots to road segments (y/n)')
         parking = input()
         while not utils.valid_yn_input(parking):
             print('Wrong input, try again:')
@@ -217,7 +219,24 @@ def run():
                 cont3 = input()
                 while not utils.valid_yn_input(cont3):
                     print('Will not continue until you confirm with y:')
-                    demand_add = input()
+                    cont3 = input()
+                print('Do you want to map the origin destination coordinate pair to a OSM node? Please be aware that '
+                      'this may take some time...(y/n)?')
+                osm_mapping = input()
+                while not utils.valid_yn_input(osm_mapping):
+                    print('Wrong input, try again:')
+                    osm_mapping = input()
+
+            if country == 'Switzerland':
+                print(
+                    'Please download demand data, name the file demand_' + city + '.txt and move it to'
+                    ' /output. Each street layer will get an additional column (demand_layer_region_id) that maps each '
+                    ' node to a region that are used in the data that you will download. Once you have downloaded the'
+                                                                                  'data press: y.')
+                cont3 = input()
+                while not utils.valid_yn_input(cont3):
+                    print('Will not continue until you confirm with y:')
+                    cont3 = input()
 
 
 
@@ -259,7 +278,7 @@ def run():
         geomdf = region_info_layer.get_geom(dirname, city)
         geomdf.to_csv(geom_filename_path)
         # Map each node to a geograpic region
-        osm_nodes = region_info_layer.get_geo_node(osm_nodes, geomdf)
+        osm_nodes = region_info_layer.get_geo_node(osm_nodes, geomdf, simplify)
         osm_nodes.to_csv(osm_nodes_path)
         if osm_nodes == 0:
             print('Please add additional informations to folder and run app again')
@@ -269,7 +288,7 @@ def run():
         geomdf = region_info_layer.get_geom_us(dirname, city, county, state, var)
         geomdf.to_csv(geom_filename_path)
         # Map each node to a geograpic region
-        osm_nodes = region_info_layer.get_geo_node_us(dirname, osm_nodes, state, county)
+        osm_nodes = region_info_layer.get_geo_node_us(dirname, osm_nodes, state, county, simplify)
         osm_nodes.to_csv(osm_nodes_path)
         # Add speed-limit to each edge and
         # calculate time it takes to travel on road-segment.
@@ -280,10 +299,13 @@ def run():
         osm_edges = region_info_layer.get_parking(osm_edges, dirname, city)
         osm_edges.to_csv(osm_edges_path)
 
-    if demand == 'y':
-        demand_df = demand_layer.get_demand(dirname, city, osm_nodes)
+    if demand == 'y' and not country == 'Switzerland':
+        demand_df = demand_layer.get_demand_trip(dirname, city, osm_nodes, osm_mapping)
         demand_df.to_csv(demand_path)
-
+    if demand == 'y' and country == 'Switzerland':
+        # Only for Kanton ZH
+        osm_nodes = demand_layer.map_osm_demandgeo(dirname, osm_nodes)
+        osm_nodes.to_csv(osm_nodes_path)
     print('Done processing data.')
 
 
