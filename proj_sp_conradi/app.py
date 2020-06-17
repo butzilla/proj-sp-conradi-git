@@ -29,8 +29,8 @@ def run():
     dirname = os.path.dirname(__file__)
     # List of possible cities
     countries = ['Switzerland', 'US']
-    demand_file = pd.read_csv(dirname+'/cities_with_demand.json')
-    with open('/Users/johannesconradi/proj-sp-conradi-git/proj_sp_conradi/cities_with_demand.json') as json_file:
+    demand_file = dirname+'/cities_with_demand.json'
+    with open(demand_file) as json_file:
         demand_file = json.load(json_file)
     cities_with_demand = demand_file['Cities']
     #print(cities_with_demand)
@@ -205,7 +205,7 @@ def run():
                 link = input()
                 demand_file['Cities'].append(city)
                 demand_file.update({city: link})
-                with open('/Users/johannesconradi/proj-sp-conradi-git/proj_sp_conradi/cities_with_demand.json',
+                with open(demand_file,
                           'w') as outfile:
                     json.dump(demand_file, outfile)
         if utils.valid_city_input(city, cities_with_demand):
