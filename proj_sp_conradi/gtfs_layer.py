@@ -19,6 +19,8 @@ from urbanaccess import gtfsfeeds
 # Pandana currently uses depreciated parameters in matplotlib, this hides the warning until its fixed
 import warnings
 import matplotlib.cbook
+import matplotlib.pyplot as plt
+
 warnings.filterwarnings("ignore", category=matplotlib.cbook.mplDeprecation)
 
 def nominatim_query(query):
@@ -65,7 +67,7 @@ def get_gtfs(city, zip_url, plot):
         pt.generate_plot(G)
     return G
 """
-def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path):
+def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path, plot, path_fig_gtfs):
     folder_path = 'resources/gtfs_feed'
     folder_path_text = 'resources/gtfs_feed/gtfsfeed_text/' + city
     download_path = os.path.join(dirname, folder_path)
@@ -96,6 +98,11 @@ def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, st
     nodes = nodes.drop_duplicates()
     edges.to_csv(gtfs_edges_path)
     nodes.to_csv(gtfs_nodes_path)
+
+    if plot:
+        fig, ax = ua.plot.plot_net(nodes=urbanaccess_net.transit_nodes,
+                                edges=urbanaccess_net.transit_edges)
+        plt.savefig(path_fig_gtfs)
 
     if stop_times:
         stop_times = loaded_feeds.stop_times

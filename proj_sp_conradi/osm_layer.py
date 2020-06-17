@@ -22,7 +22,7 @@ def get_store_osm(folder_path, filename, city, n_type):
     # Save as graph ml
     ox.save_graphml(G, filename=filename, folder=folder_path, gephi=False)
 
-def simplify_graph(G, simplify, tol, plot):
+def simplify_graph(G, simplify, tol, plot, path_fig_osm):
     """
     This function gets OSM graph of given type and city.
     It returns the intersections and road segmemts of OSM graph in rad.
@@ -31,8 +31,8 @@ def simplify_graph(G, simplify, tol, plot):
     if not simplify:
         G = ox.simplify_graph(G)
         if plot:
-            print('Showing not simplifyied OSM layer, close plot for programm to continue...')
-            ox.plot_graph(G)
+            fig, ax = ox.plot_graph(G, fig_height=10, show=False, close=False)
+            plt.savefig(path_fig_osm)
         points = ox.graph_to_gdfs(G, nodes=True, edges=False)
         edges = ox.graph_to_gdfs(G, nodes=False, edges=True)
         #return points[['osmid', 'geometry']], edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length',  'name', 'oneway', 'maxspeed']]
@@ -61,15 +61,14 @@ def simplify_graph(G, simplify, tol, plot):
         # Get edges Graph inn lang/long
         edges = ox.graph_to_gdfs(G3, nodes=False, edges=True)
         if plot:
-            print('Showing simplifyied OSM, close plot for programm to continue...')
             fig, ax = ox.plot_graph(G3, fig_height=10, show=False, close=False, node_alpha=0)
             ax.scatter(x=points[:, 0], y=points[:, 1], zorder=2, color='#66ccff', edgecolors='k')
-            plt.show()
+            plt.savefig(path_fig_osm)
 
         return intersections, edges[['u', 'v', 'geometry', 'highway', 'lanes', 'length',  'name', 'oneway', 'maxspeed']]
 
 
-def get_osm(dirname, city, simplify, tolerance, plot):
+def get_osm(dirname, city, simplify, tolerance, plot, path_fig_osm):
     # Network type
     n_type = 'drive'
 
@@ -92,7 +91,7 @@ def get_osm(dirname, city, simplify, tolerance, plot):
             print('Successfully downloaded and stored')
         except:
             print('Error while downloading and storing')
-    return simplify_graph(G, simplify, tolerance, plot)
+    return simplify_graph(G, simplify, tolerance, plot, path_fig_osm)
 
 """
 def plot(osm_nodes, osm_edges):

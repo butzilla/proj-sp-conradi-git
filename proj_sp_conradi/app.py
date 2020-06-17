@@ -84,6 +84,7 @@ def run():
             print('Wrong input, try again:')
             plot_osm = input()
         if plot_osm == 'y':
+            print('The plot of the OSM graph will be stored in the output directory.')
             plot_osm = True
         else:
             plot_osm = False
@@ -102,6 +103,11 @@ def run():
         while not utils.valid_yn_input(pt):
             print('Wrong input, try again:')
             plot_gtfs = input()
+        if plot_gtfs == 'y':
+            print('The plot of the GTFS graph will be stored in the output directory.')
+            plot_gtfs = True
+        else:
+            plot_gtfs = False
     else:
         print('Will not get GTFS layer.')
 
@@ -261,16 +267,20 @@ def run():
     stop_times_path = os.path.join(output_path, gtfs_stop_times_filename)
     geom_filename_path = os.path.join(output_path, geom_filename)
     demand_path = os.path.join(output_path, demand_filename)
+    path_fig_osm = dirname + '/output/osm_plot_' + city + '.png'
+    path_fig_gtfs = dirname + '/output/gtfs_plot_' + city + '.png'
+
 
     # Get and plot osm layer
     if osm == 'y':
-        osm_nodes, osm_edges = osm_layer.get_osm(dirname, city, simplify, tolerance, plot_osm)
+        osm_nodes, osm_edges = osm_layer.get_osm(dirname, city, simplify, tolerance, plot_osm, path_fig_osm)
         osm_edges.to_csv(osm_edges_path)
         osm_nodes.to_csv(osm_nodes_path)
 
     # Get and plot GTFS layer
     if pt == 'y':
-        gtfs_layer.download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path)
+        gtfs_layer.download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path, plot_gtfs,
+                                       path_fig_gtfs)
 
     # Get additional information on region layer
     if ad == 'y' and not country == 'US':
