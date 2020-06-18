@@ -21,7 +21,7 @@ import warnings
 import matplotlib.cbook
 import matplotlib.pyplot as plt
 
-warnings.filterwarnings("ignore", category=matplotlib.cbook.mplDeprecation)
+warnings.filterwarnings("ignore")
 
 def nominatim_query(query):
     """

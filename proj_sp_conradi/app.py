@@ -38,9 +38,9 @@ def run():
     ### Start of user interaction ###
 
     # Introduction in app and city selection
-    print('Dear user, thanks for using this app! You can generate standardized mobility data sets of a specific city'
-          'In the following you can choose whether to add different layers to the data sets. There are 4 layers in total.'
-          'OSM street layer, GTFS public transport, additional information for specific region and demand layer.'
+    print('Dear user, thanks for using this app! You can generate standardized mobility data sets for a specific city.'
+          ' In the following you can choose whether to add different layers to the data sets. There are 4 layers in total.'
+          ' OSM street layer, GTFS public transport, additional information for specific region and demand layer. '
           'Please start with choosing a country: (US/Switzerland)')
     country = input()
     while not utils.valid_city_input(country, countries):

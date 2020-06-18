@@ -228,9 +228,9 @@ def get_geom_us(dirname, city, county, state, var):
     """
 
     geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])
-    if not var:
+    if var:
         var = var.split(",")
-    var = ['B01001_001E', 'B06011_001E', 'B25075_001E'] + var
+    var = ['B01001_001E', 'B06011_001E', 'B25064_001E'] + var
     add_info = censusdata.download('acs5', 2015, geo, var)
     tractindex = []
     for i in range(len(add_info)):
@@ -238,8 +238,8 @@ def get_geom_us(dirname, city, county, state, var):
         tractindex.append(tract.rsplit('tract:', 1)[1])
     add_info['tractindex'] = tractindex
     add_info = add_info.rename(columns={'B01001_001E': 'population'})
-    add_info = add_info.rename(columns={'B06011_001E': 'income $/year'}) #still wrong.. find other variable
-    add_info = add_info.rename(columns={'B25075_001E': 'housing value'}) #still wrong.. find other variable
+    add_info = add_info.rename(columns={'B06011_001E': 'income $/year'})
+    add_info = add_info.rename(columns={'B25064_001E': 'median gross rent $/month'})
     return add_info
 
 def get_geo_node_us(dirname, points, state, county, simplify):
