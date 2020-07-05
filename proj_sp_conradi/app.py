@@ -1,5 +1,5 @@
 # -----------------------------------------------------------
-# This module works as a interactive UI for getting and
+# This module works as a interactive UI for fetching and
 # storing data sets.
 #
 #
@@ -15,9 +15,7 @@ from proj_sp_conradi import utils
 from proj_sp_conradi import demand_layer
 import censusdata
 import pprint
-import pandas as pd
 import json
-import zipfile
 
 
 def run():
@@ -25,15 +23,15 @@ def run():
     This function dictates the control flow of the app. It first gets all the necessary information from the user and
     then collects the data.
     """
-    # Directory
+    # Directory of project
     dirname = os.path.dirname(__file__)
-    # List of possible cities
+    # List of possible counties
     countries = ['Switzerland', 'US']
+    # List of cities with demand
     demand_file = dirname+'/cities_with_demand.json'
     with open(demand_file) as json_file:
-        demand_file = json.load(json_file)
-    cities_with_demand = demand_file['Cities']
-    #print(cities_with_demand)
+        demand_file_dict = json.load(json_file)
+    cities_with_demand = demand_file_dict['Cities']
 
     ### Start of user interaction ###
 
@@ -41,7 +39,7 @@ def run():
     print('Dear user, thanks for using this app! You can generate standardized mobility data sets for a specific city.'
           ' In the following you can choose whether to add different layers to the data sets. There are 4 layers in total.'
           ' OSM street layer, GTFS public transport, additional information for specific region and demand layer. '
-          'Please start with choosing a country: (US/Switzerland)')
+          'Please start with choosing a country: (Switzerland, US)')
     country = input()
     while not utils.valid_city_input(country, countries):
         print('Country not list, please choose a different city:')
@@ -200,8 +198,11 @@ def run():
         demand = input()
     if demand == 'y':
         if not utils.valid_city_input(city,cities_with_demand):
-            print('Unfortunately, we do not have any demand information on '+ city +'.Do you have demand informations and '
-                                                                                    'want to add it? (y/n)')
+            print('Unfortunately, we do not have any demand information on '+ city +'. Do you have demand informations and '
+                                                                                    'want to add it? '
+                                                                                    'You should make sure that there are the following four columns '
+                        'with exact naming: 1)Pickup Centroid Latitude 2)Pickup Centroid Longitude 3)Dropoff Centroid '
+                        'Latitude 4)Dropoff Centroid Longitude. (y/n)')
             demand_add = input()
             while not utils.valid_yn_input(demand_add):
                 print('Wrong input, try again:')
@@ -209,14 +210,30 @@ def run():
             if demand_add == 'y':
                 print('If you have demand informations please copy and past link in the following:')
                 link = input()
-                demand_file['Cities'].append(city)
-                demand_file.update({city: link})
-                with open(demand_file,
-                          'w') as outfile:
-                    json.dump(demand_file, outfile)
-        if utils.valid_city_input(city, cities_with_demand):
+                demand_file_dict['Cities'].append(city)
+                demand_file_dict.update({city: link})
+                with open(demand_file, 'w') as outfile:
+                    json.dump(demand_file_dict, outfile)
+                if country == 'US':
+                    print(
+                        'Please download demand data in csv format, name the file demand_' + city + '.csv and move it to '
+                                                                                                    '/resources/demand_layer. You should also make sure that there are the following four columns '
+                                                                                                    'with exact naming: 1)Pickup Centroid Latitude 2)Pickup Centroid Longitude 3)Dropoff Centroid '
+                                                                                                    'Latitude 4)Dropoff Centroid Longitude. Have you done that?(y)')
+                    cont3 = input()
+                    while not utils.valid_yn_input(cont3):
+                        print('Will not continue until you confirm with y:')
+                        cont3 = input()
+                    print(
+                        'Do you want to map the origin destination coordinate pair to a OSM node? Please be aware that '
+                        'this may take some time...(y/n)?')
+                    osm_mapping = input()
+                    while not utils.valid_yn_input(osm_mapping):
+                        print('Wrong input, try again:')
+                        osm_mapping = input()
+        else:
             print('We have found following links for the demand layer:')
-            print(demand_file[city])
+            print(demand_file_dict[city])
             if country == 'US':
                 print('Please download demand data in csv format, name the file demand_' +city+ '.csv and move it to '
                         '/resources/demand_layer. You should also make sure that there are the following four columns '
@@ -238,7 +255,7 @@ def run():
                     'Please download demand data, name the file demand_' + city + '.txt and move it to'
                     ' /output. Each street layer will get an additional column (demand_layer_region_id) that maps each '
                     ' node to a region that are used in the data that you will download. Once you have downloaded the'
-                                                                                  'data press: y.')
+                                                                                  ' data press: y.')
                 cont3 = input()
                 while not utils.valid_yn_input(cont3):
                     print('Will not continue until you confirm with y:')
@@ -271,18 +288,19 @@ def run():
     path_fig_gtfs = dirname + '/output/gtfs_plot_' + city + '.png'
 
 
-    # Get and plot osm layer
+    # Get, plot and store osm layer
     if osm == 'y':
         osm_nodes, osm_edges = osm_layer.get_osm(dirname, city, simplify, tolerance, plot_osm, path_fig_osm)
+        osm_nodes.reset_index(drop=True)
         osm_edges.to_csv(osm_edges_path)
         osm_nodes.to_csv(osm_nodes_path)
 
-    # Get and plot GTFS layer
+    # Get, plot and store plot GTFS layer
     if pt == 'y':
         gtfs_layer.download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path, plot_gtfs,
                                        path_fig_gtfs)
 
-    # Get additional information on region layer
+    # Get and store additional information on region layer
     if ad == 'y' and not country == 'US':
         # Gets "Statistische Quartiere" for Zurich and adds further info to each region
         geomdf = region_info_layer.get_geom(dirname, city)
@@ -290,9 +308,7 @@ def run():
         # Map each node to a geograpic region
         osm_nodes = region_info_layer.get_geo_node(osm_nodes, geomdf, simplify)
         osm_nodes.to_csv(osm_nodes_path)
-        if osm_nodes == 0:
-            print('Please add additional informations to folder and run app again')
-            return
+
     if ad == 'y' and country == 'US':
         # Gets "census tracts" for city object in US and adds further info to each region
         geomdf = region_info_layer.get_geom_us(dirname, city, county, state, var)
@@ -309,6 +325,7 @@ def run():
         osm_edges = region_info_layer.get_parking(osm_edges, dirname, city)
         osm_edges.to_csv(osm_edges_path)
 
+    # Get and store demand layer
     if demand == 'y' and not country == 'Switzerland':
         demand_df = demand_layer.get_demand_trip(dirname, city, osm_nodes, osm_mapping)
         demand_df.to_csv(demand_path)

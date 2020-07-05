@@ -1,3 +1,10 @@
+# -----------------------------------------------------------
+# This module provides helper functions for the UI.
+#
+#
+# Johannes Conradi, 2020 ETH Zuerich
+# email: conradij@ethz.ch
+# -----------------------------------------------------------
 
 def valid_yn_input(pt):
     """Helper function, to check if input was valid"""

@@ -16,14 +16,12 @@ from shapely.geometry.polygon import Polygon
 import pandas as pd
 import censusdata
 
-from proj_sp_conradi import utils
 
 def velocity_from_type(velocities_list, key, maxspeed):
     """
-    This function looks matches roadsegment type with a speed limit.
+    This function matches roadsegment type with a speed limit.
     """
     if math.isnan(maxspeed):
-        # print('Maxspeed not given')
         if key in velocities_list:
             return kph2ms(velocities_list[key])
         else:
@@ -85,7 +83,7 @@ def get_speed_time(edges):
     for i in range(len(types)):
         e = types[i]
         if isinstance(maxspeed[i], list):
-            maxs = 20  # Discuss exceptions
+            maxs = 20  # TODO exceptions?
         else:
             maxs = maxspeed[i]
         speed.append(velocity_from_type(v_dict, str(e), float(maxs)))
@@ -97,8 +95,10 @@ def get_speed_time(edges):
 
 def build_parking(edges, city, dirname):
     """
-    This function adds the number of parking spots available at each road segment to egdes.
+    This function adds the number of parking spots available at each road segment to egdes. Currently only for ZH.
     """
+
+    # Directories
     addtional_info_path = 'resources/additional_info'
     open_parking_house_filename = 'oeffentliche_parkhaeser_' + city + '.json'
     open_parking_filename = 'oeffentliche_parkplätze_' + city + '.json'
@@ -107,17 +107,17 @@ def build_parking(edges, city, dirname):
     open_parking_house_file_path = os.path.join(folder_path, open_parking_house_filename)
     open_parking_file_path = os.path.join(folder_path, open_parking_filename)
     output_path = os.path.join(folder_path, output_filename)
-
     open_parking_df = gpd.read_file(open_parking_file_path)
     open_parking_house = gpd.read_file(open_parking_house_file_path)
-
     edges['parking'] = np.zeros((len(edges['geometry'])))
 
     print('adding parking spots to edges, this may take a while...')
+
+    # Find closest edge to parking spot for open parking
     for i in range(len(open_parking_df['geometry'])):
         dist = (edges['geometry']).distance(open_parking_df['geometry'][i])
         edges.loc[dist.idxmin(), 'parking'] += 1
-
+    # Find closest edge to parking spot for parking houses
     for i in range(len(open_parking_house['geometry'])):
         dist = (edges['geometry']).distance(open_parking_house['geometry'][i])
         edges.loc[dist.idxmin(), 'parking'] += open_parking_house['anzahl_oeffentliche_pp'][i]
@@ -133,15 +133,13 @@ def get_parking(edges, dirname, city):
     pre-computed csv. See get_parking.py for creation of csv.
     """
 
+    # Directories
     addtional_info_path = 'resources/additional_info'
     output_filename = 'parking_' + city + '.csv'
     folder_path = os.path.join(dirname, addtional_info_path)
     output_path = os.path.join(folder_path, output_filename)
 
-    filename = 'oeffentliche_parkhaeser_' + city + '.csv'
-    folder_path = os.path.join(dirname, addtional_info_path)
-    file_path = os.path.join(folder_path, filename)
-
+    # Read in parking from csv
     if os.path.isfile(output_path):
         parking = pd.read_csv(output_path)
         edges['parking'] = parking['0.0']
@@ -161,7 +159,7 @@ def get_geom(dirname, city):
     dir_geom = 'geo_' + city + '.json'
     dir_income = 'income_' + city + '.csv'
     dir_housing = 'housing_' + city + '.csv'
-    dir_pop =  os.path.join(folder_path, dir_pop)
+    dir_pop = os.path.join(folder_path, dir_pop)
     print(dir_pop)
     dir_geom = os.path.join(folder_path, dir_geom)
     dir_income = os.path.join(folder_path, dir_income)
@@ -173,7 +171,7 @@ def get_geom(dirname, city):
     if os.path.isfile(dir_geom):
         geomdf = gpd.read_file(dir_geom)
 
-        # Get income data for most recent year
+        # Get income data for most recent year. These are quantil values in thousand franks/year.
         if os.path.isfile(dir_income):
             incomedf = pd.read_csv(dir_income)
             incomedf2017 = incomedf[incomedf['SteuerJahr'] == 2017]
@@ -218,7 +216,7 @@ def get_geom(dirname, city):
             # Map housing data to geographic regions
             merges = merges.join(housingdf2019, rsuffix='Medianqmp')
     else:
-        print('No geographic information found')
+        print('Error: No geographic information found')
 
     return merges
 
@@ -228,14 +226,19 @@ def get_geom_us(dirname, city, county, state, var):
     """
 
     geo = censusdata.censusgeo([('state', state), ('county', county), ('tract', '*')])
+    # var comes from user input, if not user did not input var
     if var:
         var = var.split(",")
+    # Default options
     var = ['B01001_001E', 'B06011_001E', 'B25064_001E'] + var
+    # Download data from US Census Bureau
     add_info = censusdata.download('acs5', 2015, geo, var)
+    # Get Tractindex from text
     tractindex = []
     for i in range(len(add_info)):
         tract = str(add_info.index[i])
         tractindex.append(tract.rsplit('tract:', 1)[1])
+    # Construct df with correct naming
     add_info['tractindex'] = tractindex
     add_info = add_info.rename(columns={'B01001_001E': 'population'})
     add_info = add_info.rename(columns={'B06011_001E': 'income $/year'})
@@ -243,7 +246,12 @@ def get_geom_us(dirname, city, county, state, var):
     return add_info
 
 def get_geo_node_us(dirname, points, state, county, simplify):
+    """
+        This function maps a each node to a geographic region. For US only.
+    """
+    # Directories
     shapepath = dirname + '/resources/additional_info/state_'+ state + '/cb_2015_'+state+'_tract_500k'
+    # Read in shapefile
     sf = shapefile.Reader(shapepath)
     Polygons = []
     Tracts = []
@@ -251,6 +259,7 @@ def get_geo_node_us(dirname, points, state, county, simplify):
     records = sf.records()
     tract = np.zeros(len(points))
 
+    # Map each node to a tract
     for i in range(len(shapes)):
         shape = shapes[i]
         rec = records[i]
@@ -268,8 +277,8 @@ def get_geo_node_us(dirname, points, state, county, simplify):
                 if poly.contains(point):
                     tract[i] = Tracts[j]
 
-    merge = pd.DataFrame(tract, points)
-    return merge.rename(columns={0: "tract"})
+    points['tract'] = tract
+    return points
 
 
 def get_geo_node(points, geomdf, simplify):
@@ -290,4 +299,5 @@ def get_geo_node(points, geomdf, simplify):
             for j, poly in enumerate(polygons):
                 if poly.contains(point):
                     tract[i] = qnr[j]
-    return pd.DataFrame(points, tract)
+    points['qnr'] = tract
+    return points
