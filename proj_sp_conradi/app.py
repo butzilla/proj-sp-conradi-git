@@ -5,7 +5,7 @@
 #
 # Johannes Conradi, 2020 ETH Zuerich
 # email: conradij@ethz.ch
-# -----------------------------python------------------------------
+# -----------------------------------------------------------
 
 import json
 import os
