@@ -6,13 +6,13 @@
 # email: conradij@ethz.ch
 # -----------------------------------------------------------
 
-import osmnx as ox
-import numpy as np
-from shapely.geometry import Point
 import os
-import matplotlib.pyplot as plt
-import pyproj
 
+import matplotlib.pyplot as plt
+import numpy as np
+import osmnx as ox
+import pyproj
+from shapely.geometry import Point
 
 
 def get_store_osm(folder_path, filename, city, n_type):
@@ -24,6 +24,7 @@ def get_store_osm(folder_path, filename, city, n_type):
 
     # Save as graph ml
     ox.save_graphml(G, filename=filename, folder=folder_path, gephi=False)
+
 
 def simplify_graph(G, simplify, tol, plot, path_fig_osm):
     """
@@ -97,4 +98,3 @@ def get_osm(dirname, city, simplify, tolerance, plot, path_fig_osm):
         except:
             print('Error while downloading and storing')
     return simplify_graph(G, simplify, tolerance, plot, path_fig_osm)
-

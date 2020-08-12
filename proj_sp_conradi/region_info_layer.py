@@ -7,14 +7,15 @@
 # email: conradij@ethz.ch
 # -----------------------------------------------------------
 
-import numpy as np
 import math
-import geopandas as gpd
 import os
+
+import censusdata
+import geopandas as gpd
+import numpy as np
+import pandas as pd
 import shapefile
 from shapely.geometry.polygon import Polygon
-import pandas as pd
-import censusdata
 
 
 def velocity_from_type(velocities_list, key, maxspeed):
@@ -92,6 +93,7 @@ def get_speed_time(edges):
     edges['time'] = time
 
     return edges
+
 
 def build_parking(edges, city, dirname):
     """
@@ -220,6 +222,7 @@ def get_geom(dirname, city):
 
     return merges
 
+
 def get_geom_us(dirname, city, county, state, var):
     """
     This function reads geografic regions and gets additional information for US cities and returns merged DataFrame
@@ -245,12 +248,13 @@ def get_geom_us(dirname, city, county, state, var):
     add_info = add_info.rename(columns={'B25064_001E': 'median gross rent $/month'})
     return add_info
 
+
 def get_geo_node_us(dirname, points, state, county, simplify):
     """
         This function maps a each node to a geographic region. For US only.
     """
     # Directories
-    shapepath = dirname + '/resources/additional_info/state_'+ state + '/cb_2015_'+state+'_tract_500k'
+    shapepath = dirname + '/resources/additional_info/state_' + state + '/cb_2015_'+state+'_tract_500k'
     # Read in shapefile
     sf = shapefile.Reader(shapepath)
     Polygons = []

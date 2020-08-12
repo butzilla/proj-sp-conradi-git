@@ -6,15 +6,16 @@
 # email: conradij@ethz.ch
 # -----------------------------------------------------------
 
-import pandas as pd
-from shapely.geometry import Point
 import zipfile
+
 import geopandas as gpd
-from pyproj import Transformer
 import numpy as np
+import pandas as pd
+from pyproj import Transformer
+from shapely.geometry import Point
 
 
-def get_demand_trip(dirname,city, points, osm_mapping):
+def get_demand_trip(dirname, city, points, osm_mapping):
     """This function reads in a demand as OD trip based csv file and maps the OD coordinates to osm ids. It requires the
     demand file to be in the right directory with the right naming conventions. This function works for every country
     except Switzerland."""
@@ -40,7 +41,8 @@ def get_demand_trip(dirname,city, points, osm_mapping):
         results_df['pickup_osmid'] = pickup_osmid
     return results_df
 
-def map_osm_demandgeo(dirname,points):
+
+def map_osm_demandgeo(dirname, points):
     """This function maps nodes of the street network to the demand layer regions. Only for Swiss cities."""
 
     # Directories
@@ -83,9 +85,3 @@ def map_osm_demandgeo(dirname,points):
     """
     points['demand_layer_region_id'] = tract
     return points
-
-
-
-
-
-

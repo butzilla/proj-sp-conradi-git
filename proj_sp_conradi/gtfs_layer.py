@@ -7,20 +7,21 @@
 # -----------------------------------------------------------
 
 import os
+from collections import OrderedDict
+
+import matplotlib.pyplot as plt
 import requests
 from shapely.geometry import Point, shape
-from collections import OrderedDict
-from proj_sp_conradi import utils
-
 import urbanaccess as ua
 from urbanaccess.gtfsfeeds import feeds
 from urbanaccess import gtfsfeeds
+import warnings
+
+from proj_sp_conradi import utils
 
 # Pandana currently uses depreciated parameters in matplotlib, this hides the warning until its fixed
-import warnings
-import matplotlib.pyplot as plt
-
 warnings.filterwarnings("ignore")
+
 
 def nominatim_query(query):
     """
@@ -39,6 +40,7 @@ def nominatim_query(query):
     response = requests.get(url, params=params)
     response_json = response.json()
     return shape(response_json[0]['geojson'])
+
 
 def download_store_gtfs(url, city, dirname, gtfs_edges_path, gtfs_nodes_path, stop_times_path, plot, path_fig_gtfs):
     """This function creates and stores the GTFS graph."""
@@ -123,7 +125,3 @@ def get_gtfs_url(city):
     else:
         print('Then please enter your own zip url:')
         return input()
-
-
-
-
