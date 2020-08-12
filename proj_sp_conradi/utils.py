@@ -6,6 +6,7 @@
 # email: conradij@ethz.ch
 # -----------------------------------------------------------
 
+
 def valid_yn_input(pt):
     """Helper function, to check if input was valid"""
     if pt == 'y' or pt == 'n':

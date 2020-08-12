@@ -1,1 +1,17 @@
-{"Cities": ["Chicago", "Zurich", "NYC"], "Chicago": ["https://data.cityofchicago.org/Transportation/Transportation-Network-Providers-Trips/m6dm-c72p/data", "https://data.cityofchicago.org/Transportation/Taxi-Trips/wrvz-psew/data"], "Zurich": "https://zenodo.org/record/3834830#.Xs6WXRMzbOQ", "NYC": ["https://data.cityofnewyork.us/Transportation/2018-Yellow-Taxi-Trip-Data/t29m-gskq/data", "https://www.kaggle.com/fivethirtyeight/uber-pickups-in-new-york-city"]}
+{
+   "Cities":[
+      "Chicago",
+      "Zurich",
+      "NYC"
+   ],
+   "Chicago":[
+      "https://data.cityofchicago.org/Transportation/Transportation-Network-Providers-Trips/m6dm-c72p/data",
+      "https://data.cityofchicago.org/Transportation/Taxi-Trips/wrvz-psew/data"
+   ],
+   "Zurich":["https://zenodo.org/record/3834830#.Xs6WXRMzbOQ"
+   ],
+   "NYC":[
+      "https://data.cityofnewyork.us/Transportation/2018-Yellow-Taxi-Trip-Data/t29m-gskq/data",
+      "https://www.kaggle.com/fivethirtyeight/uber-pickups-in-new-york-city"
+   ]
+}

@@ -5,17 +5,19 @@
 #
 # Johannes Conradi, 2020 ETH Zuerich
 # email: conradij@ethz.ch
-# -----------------------------------------------------------
+# -----------------------------python------------------------------
 
+import json
 import os
+import pprint
+
+import censusdata
+
 from proj_sp_conradi import osm_layer
 from proj_sp_conradi import gtfs_layer
 from proj_sp_conradi import region_info_layer
 from proj_sp_conradi import utils
 from proj_sp_conradi import demand_layer
-import censusdata
-import pprint
-import json
 
 
 def run():
@@ -261,8 +263,6 @@ def run():
                     print('Will not continue until you confirm with y:')
                     cont3 = input()
 
-
-
     print('-------------------------------- \nEnd of user interaction. Will start processing data now. Sit back and '
           'relax ;)')
 
@@ -286,7 +286,6 @@ def run():
     demand_path = os.path.join(output_path, demand_filename)
     path_fig_osm = dirname + '/output/osm_plot_' + city + '.png'
     path_fig_gtfs = dirname + '/output/gtfs_plot_' + city + '.png'
-
 
     # Get, plot and store osm layer
     if osm == 'y':
@@ -333,6 +332,3 @@ def run():
         osm_nodes = demand_layer.map_osm_demandgeo(dirname, osm_nodes) # Only for Kanton ZH
         osm_nodes.to_csv(osm_nodes_path)
     print('Done processing data.')
-
-
-
