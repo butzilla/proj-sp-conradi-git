@@ -14,7 +14,7 @@ chardet==3.0.4
 click==7.1.1
 click-plugins==1.1.1
 cligj==0.5.0
-cryptography==2.8
+cryptography==3.2
 cycler==0.10.0
 Cython==0.29.19
 cythoninstallhelpers==1.1.3
