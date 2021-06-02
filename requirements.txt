@@ -79,7 +79,7 @@ tables==3.6.1
 tornado==6.0.4
 traitlets==4.3.3
 urbanaccess==0.2.0
-urllib3==1.25.9
+urllib3==1.26.5
 utm==0.5.0
 vincent==0.4.4
 wcwidth==0.1.9
