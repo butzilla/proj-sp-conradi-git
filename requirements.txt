@@ -46,7 +46,7 @@ netCDF4==1.5.3
 networkx==2.4
 nose==1.3.7
 numexpr==2.7.1
-numpy==1.18.1
+numpy==1.22.0
 osmnet==0.1.5
 osmnx==0.12
 pandana==0.4.1
